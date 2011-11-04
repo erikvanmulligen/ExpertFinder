@@ -1,0 +1,8 @@
+This project is meant to retrieve the right affilitation for an expert mentioned in a list.
+In this list we have per expert a list of pmids that were identified as relevant for the topic.
+
+We first use the list of pmids to create a weighted list of co-authors and a list of country names and city names
+Subsequently we use the name of the expert to search publications where he/she is first author
+We filter the result of this search on the co-authors that were found and the country and city names
+We only look at affiliations where the e-mail address is closest to the expert's name using a lehvenstein algorithm
+Finally we select the affiliation and e-mail address for which we have found the highest distance score on the e-mail address
