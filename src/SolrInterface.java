@@ -28,8 +28,12 @@ public class SolrInterface {
 	}
 	
 	// Configuration options for the connector
-	public SolrInterface() throws MalformedURLException {
+	public SolrInterface(Boolean clear) throws SolrServerException, IOException {
 		inbiomedvisionServer = this.createServer( serverURL + "inbiomedvision-pubmed/" );
+		if (clear){
+			inbiomedvisionServer.deleteByQuery("*:*");
+			inbiomedvisionServer.commit();
+		}
 	}
 	
 	public void commit() {
@@ -69,27 +73,39 @@ public class SolrInterface {
 		return queryResponse.getResults();
 	}
 	
+	public Boolean isChineseJapanseKorean( String affiliation ){
+		String lcAffiliation = affiliation.toLowerCase();
+		return lcAffiliation.contains("china") || lcAffiliation.contains( "chinese") || lcAffiliation.contains("japan") || lcAffiliation.contains("korea");
+	}
+	
 	public Boolean addINBIOMEDVisionRecord( DatabaseInfo databaseInfo ){
-		SolrInputDocument doc = new SolrInputDocument();
+		System.out.println(databaseInfo.getQueryTerm() + " add: pmid = " + databaseInfo.getPmid() );
 		for ( int i = 0 ; i < databaseInfo.getAuthors().size() ; i++ ){
-			System.out.println("addRecord(): pmid = " + databaseInfo.getPmid() );
-			doc.addField("pmid", databaseInfo.getPmid() );
-			doc.addField("title", databaseInfo.getTitle());
-			doc.addField("queryterm", databaseInfo.getQueryTerm());
-			doc.addField("date", databaseInfo.getDate());
-			doc.addField("journal", databaseInfo.getJournal());
-			doc.addField("firstname", databaseInfo.getAuthors().get(i).getFirstName());
-			doc.addField("lastname", databaseInfo.getAuthors().get(i).getLastName());
-			doc.addField("initials", databaseInfo.getAuthors().get(i).getInitials());
-			doc.addField("lastauthor", databaseInfo.getAuthors().get(i).getLastAuthor());
-			try {
-				inbiomedvisionServer.add( doc );
-			} catch (SolrServerException e) {
-				e.printStackTrace();
-				return false;
-			} catch (IOException e) {
-				e.printStackTrace();
-				return false;
+			if ( ! isChineseJapanseKorean( databaseInfo.getAffiliation() ) ){
+				SolrInputDocument doc = new SolrInputDocument();
+				doc.addField("pmid", databaseInfo.getPmid() );
+				doc.addField("title", databaseInfo.getTitle());
+				doc.addField("affiliation", databaseInfo.getAffiliation() );
+				doc.addField("queryterm", databaseInfo.getQueryTerm());
+				doc.addField("date", databaseInfo.getDateAsCalendar() );
+				doc.addField("journal", databaseInfo.getJournal());
+				doc.addField("firstname", databaseInfo.getAuthors().get(i).getFirstName());
+				doc.addField("lastname", databaseInfo.getAuthors().get(i).getLastName());
+				doc.addField("fullname", databaseInfo.getAuthors().get(i).getFullname());
+				doc.addField("initials", databaseInfo.getAuthors().get(i).getInitials());
+				doc.addField("lastauthor", databaseInfo.getAuthors().get(i).getLastAuthor());
+				try {
+					inbiomedvisionServer.add( doc );
+				} catch (SolrServerException e) {
+					e.printStackTrace();
+					return false;
+				} catch (IOException e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+			else{
+				System.out.println( "skipped asian record " + databaseInfo.getPmid() );
 			}
 		}
 		return true;

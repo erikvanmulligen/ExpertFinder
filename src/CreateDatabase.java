@@ -18,6 +18,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.solr.client.solrj.SolrServerException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -32,18 +33,36 @@ import org.xml.sax.SAXException;
  */
 public class CreateDatabase {
 	static String DataFolder = "/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/";
-	static String[] files = {"text mining.xml"};
+	static String[] files = {	"Biomedical Imaging.xml", 
+								"Computational Genomics.xml", 
+								"Models Molecular.xml", 
+								"chemoinformatics.xml", 
+								"clinical application.xml", 
+								"clinical_information_OR_clinical_data.xml", 
+								"computational biology.xml", 
+								"computers.xml", 
+								"drug industry.xml", 
+								"genomics.xml", 
+								"genotype_phenotype_resources.xml", 
+								"health care professionals.xml", 
+								"health professionals.xml", 
+								"modeling and simulation.xml", 
+								"neuroinformatics.xml", 
+								"ontologies.xml", 
+								"text mining.xml", 
+								"translational_research.xml" };
 	static XPath xPath;
 	static DocumentBuilder builder;	
 	static SolrInterface solrInterface = null;
 	
 	/**
 	 * @param args
-	 * @throws MalformedURLException 
+	 * @throws IOException 
+	 * @throws SolrServerException 
 	 */
-	public static void main(String[] args) throws MalformedURLException {
+	public static void main(String[] args) throws SolrServerException, IOException {
 		xPath = XPathFactory.newInstance().newXPath();
-		solrInterface = new SolrInterface();
+		solrInterface = new SolrInterface(true);
 		solrInterface.clear();
 		
 		try {
@@ -94,6 +113,7 @@ public class CreateDatabase {
 		String authorExpression       = "/PubmedArticle/MedlineCitation/Article/AuthorList/Author";
 		String journalExpression      = "/PubmedArticle/MedlineCitation/Article/Journal/Title";
 		String titleExpression        = "/PubmedArticle/MedlineCitation/Article/ArticleTitle";
+		String affiliationExpression  = "/PubmedArticle/MedlineCitation/Article/Affiliation";
 		String pubDateYearExpression  = "/PubmedArticle/MedlineCitation/DateCreated/Year";
 		String pubDateMonthExpression = "/PubmedArticle/MedlineCitation/DateCreated/Month";
 		String pubDateDayExpression   = "/PubmedArticle/MedlineCitation/DateCreated/Day";
@@ -106,6 +126,9 @@ public class CreateDatabase {
 			databaseInfo.setAuthors( getAuthorInfo(authorExpression, doc, nodes) );
 			databaseInfo.setJournal(xPath.evaluate(journalExpression, doc) );
 			databaseInfo.setTitle(xPath.evaluate(titleExpression,doc));
+//			System.out.println( databaseInfo.getPmid() + " affiliation = " + xPath.evaluate(affiliationExpression, doc) );
+//			if ( databaseInfo.getPmid().equalsIgnoreCase("21591940") ) System.exit(0);
+			databaseInfo.setAffiliation( xPath.evaluate(affiliationExpression, doc) );
 			databaseInfo.setDate(xPath.evaluate(pubDateDayExpression,doc)+"/"+xPath.evaluate(pubDateMonthExpression,doc)+"/"+xPath.evaluate(pubDateYearExpression,doc));
 		} catch (XPathExpressionException e) {
 			e.printStackTrace();
@@ -118,7 +141,33 @@ public class CreateDatabase {
 		return databaseInfo;
 	}
 	
-	public static void processFile(String queryTerm, String fileName){
+	public static void processFile(String queryTerm, String fileName) throws FileNotFoundException{
+		StringBuilder contents = new StringBuilder();
+		Scanner scanner = new Scanner(new FileInputStream(fileName), "UTF-8");
+		Boolean found = false;
+		while (scanner.hasNextLine()){
+			String line = scanner.nextLine();
+			if ( line.equalsIgnoreCase("<PubmedArticle>")){
+				found = true;
+			}
+			if ( found ){
+				contents.append(line);
+				contents.append(System.getProperty("line.separator"));
+			}
+			if ( line.equalsIgnoreCase("</PubmedArticle>")){
+				found = false;
+				if ( contents.length() > 0 ){
+					DatabaseInfo databaseInfo = processXML(contents.toString());
+					databaseInfo.setQueryTerm(queryTerm);
+					solrInterface.addINBIOMEDVisionRecord(databaseInfo);
+					contents.delete(0, contents.length());
+				}
+			}
+		}
+		scanner.close();
+	}
+	
+	public static void processFile2(String queryTerm, String fileName){
 	    StringBuilder contents = new StringBuilder();
 	    Scanner scanner;
 		try {
@@ -131,13 +180,10 @@ public class CreateDatabase {
 			        	if ( line.equalsIgnoreCase("<PubmedArticle>")){
 			        		found = true;
 			        		if ( contents.length() > 0 ){
-			        			System.out.println("before processing XML");
 			        			DatabaseInfo databaseInfo = processXML(contents.toString());
 			        			databaseInfo.setQueryTerm(queryTerm);
 		        				solrInterface.addINBIOMEDVisionRecord(databaseInfo);
-		        				System.out.println("after processing XML");
 			        			contents.delete(0, contents.length());
-			        			System.out.println("length contents = " + contents.length());
 			        			break;
 			        		}
 			        	}
@@ -146,7 +192,6 @@ public class CreateDatabase {
 			        		contents.append(System.getProperty("line.separator"));
 			        	}
 			        }
-			        break;
 			      }
 			    }
 			    finally{

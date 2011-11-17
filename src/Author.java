@@ -23,6 +23,11 @@ public class Author {
 	public void setInitials(String initials) {
 		this.initials = initials;
 	}
+	
+	public String getFullname(){
+		return ( this.initials.isEmpty() ? "" : this.initials.substring( 0, 1 ) + " ") + this.lastName;
+	}
+	
 	public String toString(){
 		return "[\"firstName\":\"" + this.firstName + "\",\"lastName\":\"" + this.lastName + "\",\"initials\":\"" + this.initials + "\",\"lastAuthor\":" + this.lastAuthor + "]";
 	}
@@ -32,4 +37,5 @@ public class Author {
 	public void setLastAuthor(Boolean lastAuthor) {
 		this.lastAuthor = lastAuthor;
 	}
+
 }

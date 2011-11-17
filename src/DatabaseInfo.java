@@ -1,4 +1,9 @@
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 
@@ -7,6 +12,7 @@ public class DatabaseInfo {
 	private List<Author> authors = new ArrayList<Author>();
 	private String queryTerm = null;
 	private String title = null;
+	private String affiliation = null;
 	private String journal = null;
 	private String date = null;
 	
@@ -52,7 +58,34 @@ public class DatabaseInfo {
 	public String getDate() {
 		return date;
 	}
+	
+	public String getDateAsCalendar(){
+		Date date = null;
+		DateFormat inFormatter = new SimpleDateFormat("dd/mm/yy");
+		try {
+			date = (Date)inFormatter.parse(this.date);
+		} catch (ParseException e) {
+			inFormatter = new SimpleDateFormat("dd/MMM/yy");
+			try {
+				date = (Date)inFormatter.parse(this.date);
+			} catch (ParseException e1) {
+				e1.printStackTrace();
+			}
+		}  
+		
+		DateFormat outFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		return outFormatter.format(date);
+	}
+	
 	public void setDate(String date) {
 		this.date = date;
+	}
+
+	public String getAffiliation() {
+		return affiliation;
+	}
+
+	public void setAffiliation(String affiliation) {
+		this.affiliation = affiliation;
 	}
 }
