@@ -1,7 +1,8 @@
 package PubMed;
+
 import gov.nih.nlm.ncbi.www.soap.eutils.EFetchPubmedServiceStub;
-import gov.nih.nlm.ncbi.www.soap.eutils.EFetchSequenceServiceStub;
 import gov.nih.nlm.ncbi.www.soap.eutils.EUtilsServiceStub;
+
 public class PubMed{
 	public static void main(String[] args) throws Exception
 	{
