@@ -32,25 +32,10 @@ import org.xml.sax.SAXException;
  *
  */
 public class CreateDatabase {
+	static String[] BioInformatics = {"genomics.xml", "Computational Genomics.xml", "systems_biology.xml", "computational_biology.xml", "chemoinformatics.xml", "modeling and simulation.xml", "genotype_phenotype_resources.xml", "translational_research.xml"};
+	static String[] MedicalInformatics = {"medical_informatics.xml", "BioMedical Imaging.xml", "neuroinformatics.xml", "computers.xml", "ontologies.xml", "text mining.xml" };
+	static String[] ClinicalApplicationHealthcare = {"health care professionals.xml", "health professionals.xml", "drug industry.xml", "clinical application.xml", "clinical_information_OR_clinical_data.xml", "translational_research.xml"};
 	static String DataFolder = "/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/";
-	static String[] files = {	"Biomedical Imaging.xml", 
-								"Computational Genomics.xml", 
-								"Models Molecular.xml", 
-								"chemoinformatics.xml", 
-								"clinical application.xml", 
-								"clinical_information_OR_clinical_data.xml", 
-								"computational biology.xml", 
-								"computers.xml", 
-								"drug industry.xml", 
-								"genomics.xml", 
-								"genotype_phenotype_resources.xml", 
-								"health care professionals.xml", 
-								"health professionals.xml", 
-								"modeling and simulation.xml", 
-								"neuroinformatics.xml", 
-								"ontologies.xml", 
-								"text mining.xml", 
-								"translational_research.xml" };
 	static XPath xPath;
 	static DocumentBuilder builder;	
 	static SolrInterface solrInterface = null;
@@ -70,8 +55,15 @@ public class CreateDatabase {
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
 		}
-		for ( int i = 0 ; i < files.length ; i++ ){
-			processFile( files[i].replace( ".xml", "" ), DataFolder + files[i] );
+		
+		for ( int i = 0 ; i < BioInformatics.length ; i++ ){
+			processFile( BioInformatics[i].replace( ".xml", "" ), DataFolder + BioInformatics[i], "bioinformatics" );
+		}
+		for ( int i = 0 ; i < MedicalInformatics.length ; i++ ){
+			processFile( MedicalInformatics[i].replace( ".xml", "" ), DataFolder + MedicalInformatics[i], "medicalinformatics" );
+		}
+		for ( int i = 0 ; i < ClinicalApplicationHealthcare.length ; i++ ){
+			processFile( ClinicalApplicationHealthcare[i].replace( ".xml", "" ), DataFolder + ClinicalApplicationHealthcare[i], "clinicalcare" );
 		}
 	}
 
@@ -141,7 +133,7 @@ public class CreateDatabase {
 		return databaseInfo;
 	}
 	
-	public static void processFile(String queryTerm, String fileName) throws FileNotFoundException{
+	public static void processFile(String queryTerm, String fileName, String domain) throws FileNotFoundException{
 		StringBuilder contents = new StringBuilder();
 		Scanner scanner = new Scanner(new FileInputStream(fileName), "UTF-8");
 		Boolean found = false;
@@ -159,7 +151,7 @@ public class CreateDatabase {
 				if ( contents.length() > 0 ){
 					DatabaseInfo databaseInfo = processXML(contents.toString());
 					databaseInfo.setQueryTerm(queryTerm);
-					solrInterface.addINBIOMEDVisionRecord(databaseInfo);
+					solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
 					contents.delete(0, contents.length());
 				}
 			}
@@ -167,7 +159,7 @@ public class CreateDatabase {
 		scanner.close();
 	}
 	
-	public static void processFile2(String queryTerm, String fileName){
+	public static void processFile2(String queryTerm, String fileName, String domain){
 	    StringBuilder contents = new StringBuilder();
 	    Scanner scanner;
 		try {
@@ -182,7 +174,7 @@ public class CreateDatabase {
 			        		if ( contents.length() > 0 ){
 			        			DatabaseInfo databaseInfo = processXML(contents.toString());
 			        			databaseInfo.setQueryTerm(queryTerm);
-		        				solrInterface.addINBIOMEDVisionRecord(databaseInfo);
+		        				solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
 			        			contents.delete(0, contents.length());
 			        			break;
 			        		}
@@ -199,7 +191,7 @@ public class CreateDatabase {
 						DatabaseInfo databaseInfo = processXML(contents.toString());
 						databaseInfo.setQueryTerm(queryTerm);
 	        			System.out.println(databaseInfo.toString());
-						solrInterface.addINBIOMEDVisionRecord(databaseInfo);
+						solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
 						contents.delete(0, contents.length());
 					}
 					scanner.close();

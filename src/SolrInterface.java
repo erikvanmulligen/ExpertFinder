@@ -1,11 +1,15 @@
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
+import org.apache.solr.client.solrj.response.FacetField;
+import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
@@ -15,6 +19,8 @@ public class SolrInterface {
 	// the remote SOLR instance that you need to connect to, could be on the same machine or a different machine
 	private static final String serverURL = "http://localhost:8080/";
 	private final SolrServer inbiomedvisionServer;
+	private static String[] domains = {"bioinformatics","medicalinformatics","clinicalcare"};
+	
 
 	private SolrServer createServer( String URL ){
 		SolrServer server = null;
@@ -62,6 +68,45 @@ public class SolrInterface {
 		}
 	}
 	
+	public void facetSearch() throws SolrServerException{
+		SolrQuery q = new SolrQuery();
+		q.setQuery( "lastauthor:true" );
+		q.setFacet( true );
+		q.addFacetField( "fullname" );
+		q.setRows( 0 );
+		q.setFacetMinCount(1);
+	
+		Integer start = 0;
+
+		
+		while ( true ){
+			q.setParam( "facet.offset", start.toString() );
+			QueryResponse r = inbiomedvisionServer.query( q );
+			List<FacetField> fields = r.getFacetFields();
+			for ( int i = 0 ; i < fields.size() ; i++ ){
+				System.out.println( fields.get(i).getName());
+			}
+			
+			int total = 0;
+			List<FacetField> fieldFacets = r.getFacetFields();
+			if (fieldFacets != null && !fieldFacets.isEmpty()) {
+				System.out.println("\nField Facets : ");
+				for (FacetField fieldFacet : fieldFacets) {
+					System.out.print("\t" + fieldFacet.getName() + " :\t");
+					if (fieldFacet.getValueCount() > 0) {
+						for (Count count : fieldFacet.getValues()) {
+							total += 1;
+							System.out.print(count.getName() + "[" + count.getCount() + "]\n");
+						}
+					}
+					System.out.println("");
+				}
+			}
+			System.out.println( "count = " + total );
+			start += total;
+		}
+	}
+	
 	public SolrDocumentList query(String table, String query) throws SolrServerException {
 		SolrServer server = null;
 		if ( table.equalsIgnoreCase("inbiomedvision")){
@@ -78,7 +123,7 @@ public class SolrInterface {
 		return lcAffiliation.contains("china") || lcAffiliation.contains( "chinese") || lcAffiliation.contains("japan") || lcAffiliation.contains("korea");
 	}
 	
-	public Boolean addINBIOMEDVisionRecord( DatabaseInfo databaseInfo ){
+	public Boolean addINBIOMEDVisionRecord( DatabaseInfo databaseInfo, String domain ){
 		System.out.println(databaseInfo.getQueryTerm() + " add: pmid = " + databaseInfo.getPmid() );
 		for ( int i = 0 ; i < databaseInfo.getAuthors().size() ; i++ ){
 			if ( ! isChineseJapanseKorean( databaseInfo.getAffiliation() ) ){
@@ -94,6 +139,13 @@ public class SolrInterface {
 				doc.addField("fullname", databaseInfo.getAuthors().get(i).getFullname());
 				doc.addField("initials", databaseInfo.getAuthors().get(i).getInitials());
 				doc.addField("lastauthor", databaseInfo.getAuthors().get(i).getLastAuthor());
+				doc.addField(domain, true);
+				for ( int d = 0 ; d < domains.length ; d++ ){
+					if ( ! domain.equalsIgnoreCase( domains[d] ) ){
+						doc.addField( domains[d], false );
+					}
+				}
+				
 				try {
 					inbiomedvisionServer.add( doc );
 				} catch (SolrServerException e) {
