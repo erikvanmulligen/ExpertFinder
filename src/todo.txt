@@ -1,0 +1,1 @@
+in AggregateAndStore check if author is already in researcherIndex (resume creation of database)

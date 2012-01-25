@@ -58,7 +58,7 @@ public class findPublications {
 				/*
 				 * augment the list of publications; first seek publications with the member as first author
 				 */
-				pubMed.searchArticles(key, 5, authors, prevArticles)
+				//pubMed.searchArticles(key, 5, authors, prevArticles)
 			}
 			break;
 		}

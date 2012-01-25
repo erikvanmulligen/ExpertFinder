@@ -18,7 +18,7 @@ public class PubMed {
 	static EUtilsServiceStub searchService ;
 
 	
-	PubMed(){
+	public PubMed(){
 		try {
 			fetchService = new EFetchPubmedServiceStub();
 			searchService = new EUtilsServiceStub();
@@ -27,13 +27,13 @@ public class PubMed {
 		}
 	}
 	
-	List<EFetchPubmedServiceStub.PubmedArticleType> getArticles(ArrayList<String> ids){
+	public List<EFetchPubmedServiceStub.PubmedArticleType> getArticles(List<String> pmids){
 		List<EFetchPubmedServiceStub.PubmedArticleType> articles = new ArrayList<EFetchPubmedServiceStub.PubmedArticleType>();
 		// call NCBI EFetch utility
-		for ( int j = 0 ; j < ids.size() ; j++ ){
+		for ( int j = 0 ; j < pmids.size() ; j++ ){
 			try{
 				EFetchPubmedServiceStub.EFetchRequest req = new EFetchPubmedServiceStub.EFetchRequest();
-				req.setId(ids.get(j));
+				req.setId(pmids.get(j));
 				EFetchPubmedServiceStub.EFetchResult res = fetchService.run_eFetch(req);
 				for (int i = 0; i < res.getPubmedArticleSet().getPubmedArticleSetChoice().length; i++){
 					EFetchPubmedServiceStub.PubmedArticleType art = res.getPubmedArticleSet().getPubmedArticleSetChoice()[i].getPubmedArticle();
@@ -52,24 +52,24 @@ public class PubMed {
 		String[] parts = name.split(",");
 		return parts[0].trim();
 	}
-	
-	List<EFetchPubmedServiceStub.PubmedArticleType> searchArticles( String name, Integer maxArticles, Map<String,Author>authors, ArrayList<String> prevArticles ){
-		List<EFetchPubmedServiceStub.PubmedArticleType> articles = new ArrayList<EFetchPubmedServiceStub.PubmedArticleType>();
-		ArrayList <String> ids = new ArrayList<String>();
 
+	public List<EFetchPubmedServiceStub.PubmedArticleType> searchArticles( String name, Integer maxArticles, List<String>authors, List<String> pmids ){
+		List<EFetchPubmedServiceStub.PubmedArticleType> articles = new ArrayList<EFetchPubmedServiceStub.PubmedArticleType>();
+
+		//System.out.( "searchArticles(): initial list of pmids = " + pmids.toString() );
 		EUtilsServiceStub.ESearchRequest req = new EUtilsServiceStub.ESearchRequest();
 		req.setDb("pubmed");
 
 		String q = "";
-		for ( String key : authors.keySet() ){
+		for ( String key : authors ){
 			if ( q.length() > 0 ){
 				q += " OR ";
 			}
-			q += " " + authors.get(key).searchName() + "[AU]";
+			q += " " + key + "[AU]";
 		}
-		q = getLastName(name) + "[First Author] AND (" + q + ")";
+		q = name + "[First Author] AND (" + q + ")";
 		
-		System.out.println( "query = " + q );
+		//System.out.println( "query = " + q );
 		
 		req.setTerm( q );
 		req.setSort( "PublicationDate" );
@@ -87,14 +87,14 @@ public class PubMed {
 			
 			for (int i = 0; i < N; i++){
 				String id = res.getIdList().getId()[i];
-				if ( ! prevArticles.contains(id) ){
-					ids.add( id );
+				if ( ! pmids.contains(id) ){
+					pmids.add( id );
 				}
 			}
 
-			System.out.println( "found additional pubs: " + ids );
-			List<EFetchPubmedServiceStub.PubmedArticleType> newArticles = this.getArticles(ids);
-			
+			//System.out.println( "found additional pubs: " + (ids.size() - prevArticles.size()) );
+			List<EFetchPubmedServiceStub.PubmedArticleType> newArticles = this.getArticles(pmids);
+			//System.out.println( "newArticles = " + newArticles.size() );
 			Iterator<PubmedArticleType> iterator = newArticles.iterator();
 			while( iterator.hasNext() ){
 				PubmedArticleType article = iterator.next();
@@ -103,8 +103,8 @@ public class PubMed {
 				for ( int a = 0 ; a < aus.length ; a++ ){
 					AuthorType author = aus[a];
 					try{
-						String key = author.getAuthorTypeChoice_type0().getAuthorTypeSequence_type0().getLastName() + ' ' + author.getAuthorTypeChoice_type0().getAuthorTypeSequence_type0().getInitials();
-						if ( authors.containsKey(key) ){
+						String key = author.getAuthorTypeChoice_type0().getAuthorTypeSequence_type0().getLastName();
+						if ( authors.contains(key) ){
 							count += 1;
 						}
 					}
@@ -113,7 +113,7 @@ public class PubMed {
 					}
 				}
 				
-				if ( count > 0 ){
+				if ( count > 0 || aus.length == 1){
 					//System.out.println( "found an article shared with a coauthor" );
 					articles.add(article);
 				}

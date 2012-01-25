@@ -1,11 +1,7 @@
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -40,6 +36,8 @@ public class CreateDatabase {
 	static DocumentBuilder builder;	
 	static SolrInterface solrInterface = null;
 	
+	static List<ExportPubMedDescriptor> descriptors = new ArrayList<ExportPubMedDescriptor>();
+	
 	/**
 	 * @param args
 	 * @throws IOException 
@@ -50,20 +48,37 @@ public class CreateDatabase {
 		solrInterface = new SolrInterface(true);
 		solrInterface.clear();
 		
+		descriptors.add( new ExportPubMedDescriptor(	"BioInformatics and MedicalInformatics", 
+														"/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/MI_BI.xml",
+														true, true, false ) );
+		descriptors.add( new ExportPubMedDescriptor(	"BioInformatics and ClinicalCare", 
+														"/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/BI_CC.xml",
+														true, false, true ) );
+		descriptors.add( new ExportPubMedDescriptor(	"MedicalInformatics and ClinicalCare", 
+														"/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/MI_CC.xml",
+														false, true, true ) );
+		descriptors.add( new ExportPubMedDescriptor(	"BioInformatics and MedicalInformatics and ClinicalCare", 
+														"/Users/mulligen/Documents/EMC/Projects/INBIOMEDVision/data/MI_BI_CC.xml",
+														true, true, true ) );
+
 		try {
 			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
 		}
 		
-		for ( int i = 0 ; i < BioInformatics.length ; i++ ){
-			processFile( BioInformatics[i].replace( ".xml", "" ), DataFolder + BioInformatics[i], "bioinformatics" );
-		}
-		for ( int i = 0 ; i < MedicalInformatics.length ; i++ ){
-			processFile( MedicalInformatics[i].replace( ".xml", "" ), DataFolder + MedicalInformatics[i], "medicalinformatics" );
-		}
-		for ( int i = 0 ; i < ClinicalApplicationHealthcare.length ; i++ ){
-			processFile( ClinicalApplicationHealthcare[i].replace( ".xml", "" ), DataFolder + ClinicalApplicationHealthcare[i], "clinicalcare" );
+//		for ( int i = 0 ; i < BioInformatics.length ; i++ ){
+//			processFile( BioInformatics[i].replace( ".xml", "" ), DataFolder + BioInformatics[i], true, false, false );
+//		}
+//		for ( int i = 0 ; i < MedicalInformatics.length ; i++ ){
+//			processFile( MedicalInformatics[i].replace( ".xml", "" ), DataFolder + MedicalInformatics[i], false, true, false );
+//		}
+//		for ( int i = 0 ; i < ClinicalApplicationHealthcare.length ; i++ ){
+//			processFile( ClinicalApplicationHealthcare[i].replace( ".xml", "" ), DataFolder + ClinicalApplicationHealthcare[i], false, false, true );
+//		}
+		
+		for ( int i = 0 ; i < descriptors.size() ; i++ ){
+			processFile( descriptors.get(i).getDescription(), descriptors.get(i).getFilename(), descriptors.get(i).getBioInformatics(), descriptors.get(i).getMedicalInformatics(), descriptors.get(i).getClinicalCare() );
 		}
 	}
 
@@ -76,6 +91,7 @@ public class CreateDatabase {
 		    for ( int i = 0 ; i < nodeList.getLength() ; i++ ){
 	    		author = new Author();
 	    		author.setLastAuthor( i == ( nodeList.getLength() - 1 ) );
+	    		author.setFirstAuthor( i == 0 );
 	    		response.add( author );
 	    		for ( int n = 0 ; n < nodes.length ; n++ ){
 	    			if ( nodes[n].equalsIgnoreCase("./ForeName") ){
@@ -133,9 +149,9 @@ public class CreateDatabase {
 		return databaseInfo;
 	}
 	
-	public static void processFile(String queryTerm, String fileName, String domain) throws FileNotFoundException{
+	private static void processFile(String description, String filename, Boolean bioInformatics, Boolean medicalInformatics, Boolean clinicalCare) throws FileNotFoundException {
 		StringBuilder contents = new StringBuilder();
-		Scanner scanner = new Scanner(new FileInputStream(fileName), "UTF-8");
+		Scanner scanner = new Scanner(new FileInputStream(filename), "UTF-8");
 		Boolean found = false;
 		while (scanner.hasNextLine()){
 			String line = scanner.nextLine();
@@ -150,54 +166,16 @@ public class CreateDatabase {
 				found = false;
 				if ( contents.length() > 0 ){
 					DatabaseInfo databaseInfo = processXML(contents.toString());
-					databaseInfo.setQueryTerm(queryTerm);
-					solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
+					databaseInfo.setBioInformatics(bioInformatics);
+					databaseInfo.setMedicalInformatics(medicalInformatics);
+					databaseInfo.setClinicalCare(clinicalCare);
+					databaseInfo.setQueryTerm(description);
+					solrInterface.addINBIOMEDVisionRecord(databaseInfo);
 					contents.delete(0, contents.length());
 				}
 			}
 		}
 		scanner.close();
-	}
-	
-	public static void processFile2(String queryTerm, String fileName, String domain){
-	    StringBuilder contents = new StringBuilder();
-	    Scanner scanner;
-		try {
-			scanner = new Scanner(new FileInputStream(fileName), "UTF-8");
-		    try {
-			      while (scanner.hasNextLine()){
-			        String line = null; //not declared within while loop
-			        Boolean found = false;
-			        while (( line = scanner.nextLine()) != null){
-			        	if ( line.equalsIgnoreCase("<PubmedArticle>")){
-			        		found = true;
-			        		if ( contents.length() > 0 ){
-			        			DatabaseInfo databaseInfo = processXML(contents.toString());
-			        			databaseInfo.setQueryTerm(queryTerm);
-		        				solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
-			        			contents.delete(0, contents.length());
-			        			break;
-			        		}
-			        	}
-			        	if ( found ){
-			        		contents.append(line);
-			        		contents.append(System.getProperty("line.separator"));
-			        	}
-			        }
-			      }
-			    }
-			    finally{
-					if ( contents.length() > 0 ){
-						DatabaseInfo databaseInfo = processXML(contents.toString());
-						databaseInfo.setQueryTerm(queryTerm);
-	        			System.out.println(databaseInfo.toString());
-						solrInterface.addINBIOMEDVisionRecord(databaseInfo, domain);
-						contents.delete(0, contents.length());
-					}
-					scanner.close();
-			    }
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+		
 	}
 }

@@ -2,7 +2,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -15,6 +14,11 @@ public class DatabaseInfo {
 	private String affiliation = null;
 	private String journal = null;
 	private String date = null;
+	private Boolean MedicalInformatics = false;
+	private Boolean BioInformatics = false;
+	private Boolean ClinicalCare = false;
+	
+	
 	
 	public String toString(){
 		String authors = "[\n";
@@ -87,5 +91,29 @@ public class DatabaseInfo {
 
 	public void setAffiliation(String affiliation) {
 		this.affiliation = affiliation;
+	}
+
+	public Boolean getMedicalInformatics() {
+		return MedicalInformatics;
+	}
+
+	public void setMedicalInformatics(Boolean medicalInformatics) {
+		MedicalInformatics = medicalInformatics;
+	}
+
+	public Boolean getBioInformatics() {
+		return BioInformatics;
+	}
+
+	public void setBioInformatics(Boolean bioInformatics) {
+		BioInformatics = bioInformatics;
+	}
+
+	public Boolean getClinicalCare() {
+		return ClinicalCare;
+	}
+
+	public void setClinicalCare(Boolean clinicalCare) {
+		ClinicalCare = clinicalCare;
 	}
 }

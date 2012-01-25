@@ -4,6 +4,7 @@ public class Author {
 	private String lastName = null;
 	private String initials = null;
 	private Boolean lastAuthor = false;
+	private Boolean firstAuthor = false;
 	
 	public String getFirstName() {
 		return firstName;
@@ -36,6 +37,13 @@ public class Author {
 	}
 	public void setLastAuthor(Boolean lastAuthor) {
 		this.lastAuthor = lastAuthor;
+	}
+	public void setFirstAuthor(boolean firstAuthor) {
+		// TODO Auto-generated method stub
+		this.firstAuthor = firstAuthor;
+	}
+	public Boolean getFirstAuthor(){
+		return this.firstAuthor;
 	}
 
 }
