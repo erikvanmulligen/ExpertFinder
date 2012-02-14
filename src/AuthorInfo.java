@@ -161,12 +161,25 @@ public class AuthorInfo {
 							distance = LetterPairSimilarity.compareStrings(emailName, result);
 							if ( distance > 0.25 && result.equalsIgnoreCase(this.fullname)){
 								this.email = email;
+								this.affiliations.add(affiliation);
 							}
 						}
 					}
 				}
 			}
-			this.affiliations.add(affiliation);
+		}
+	}
+
+	public void addAffiliationAndEmail( String affiliation ){
+		if ( affiliation != null ){
+			if ( this.email == null ){
+				String email = this.extractEmail(affiliation);
+				
+				if ( email != null ){
+					this.email = email;
+					this.affiliations.add(affiliation);
+				}
+			}
 		}
 	}
 
@@ -242,23 +255,29 @@ public class AuthorInfo {
 			return null;
 		}
 	}
+
 	
 	public void findAffiliationAndEmail( List<PubmedArticleType> articles ){
-		Iterator<PubmedArticleType> iterator = articles.iterator();
-		while( iterator.hasNext() ){
-			PubmedArticleType article = iterator.next();
-			addPmidFirst( article.getMedlineCitation().getPMID().toString() );
-			affiliations.add( article.getMedlineCitation().getArticle().getAffiliation() );
+		if ( articles != null ){
+			Iterator<PubmedArticleType> iterator = articles.iterator();
+			while( this.email == null && iterator.hasNext() ){
+				PubmedArticleType article = iterator.next();
+	//			addPmidFirst( article.getMedlineCitation().getPMID().toString() );
+	//			affiliations.add( article.getMedlineCitation().getArticle().getAffiliation() );
+				addAffiliationAndEmail(article.getMedlineCitation().getArticle().getAffiliation());		
+			}
 		}
 	}
 	
 	public void findAuthors( List<PubmedArticleType> articles ){
-		Iterator<PubmedArticleType> iterator = articles.iterator();
-		while( iterator.hasNext() ){
-			PubmedArticleType article = iterator.next();
-			AuthorType[] aus = article.getMedlineCitation().getArticle().getAuthorList().getAuthor();
-			for ( int a = 0 ; a < aus.length ; a++ ){
-				addAuthor(makeAuthor(aus[a]));
+		if ( articles != null ){
+			Iterator<PubmedArticleType> iterator = articles.iterator();
+			while( iterator.hasNext() ){
+				PubmedArticleType article = iterator.next();
+				AuthorType[] aus = article.getMedlineCitation().getArticle().getAuthorList().getAuthor();
+				for ( int a = 0 ; a < aus.length ; a++ ){
+					addAuthor(makeAuthor(aus[a]));
+				}
 			}
 		}
 	}

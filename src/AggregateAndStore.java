@@ -1,3 +1,5 @@
+import gov.nih.nlm.ncbi.www.soap.eutils.EFetchPubmedServiceStub.PubmedArticleType;
+
 import java.io.IOException;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -18,16 +20,21 @@ public class AggregateAndStore {
 		for ( String author : authorNames ){
 			count += 1;
 			System.out.println( "processing " + count + " of " + authorNames.size() );
-			//if ( author.equalsIgnoreCase("D MŸller") ){
-			AuthorInfo authorInfo = solrInterface.getAuthorInfoFromDB(author);
-			System.out.println( author );
-			authorInfo.setName( author );
-
-			if ( authorInfo.getAffiliation() == null || authorInfo.getEmail() == null ){
-				authorInfo.getAuthorInfo( pubMed, solrInterface );
-				authorInfo.setAffiliation( solrInterface.retrieveAffiliation( author ) );
-			}
-			solrInterface.addResearcherIndex( authorInfo );
+			//if ( author.contains("G Raghava") ){
+				AuthorInfo authorInfo = solrInterface.getAuthorInfoFromDB(author);
+				System.out.println( author );
+				authorInfo.setName( author );
+	
+				if ( authorInfo.getAffiliation() == null || authorInfo.getEmail() == null ){
+					authorInfo.getAuthorInfo( pubMed, solrInterface );
+					authorInfo.setAffiliation( solrInterface.retrieveAffiliation( author ) );
+				}
+				if ( authorInfo.getEmail() == null ){
+					System.out.println("no e-mail found");
+					List<PubmedArticleType> articles = pubMed.getArticles(authorInfo.getPmidFirst());
+					authorInfo.findAffiliationAndEmail(articles);
+				}
+				solrInterface.addResearcherIndex( authorInfo );
 			//}
 		}
 	}
