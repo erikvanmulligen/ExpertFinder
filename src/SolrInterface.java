@@ -14,6 +14,7 @@ import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.util.NamedList;
 
 public class SolrInterface {
 
@@ -43,9 +44,9 @@ public class SolrInterface {
 		if (clear){
 			inbiomedvisionServer.deleteByQuery("*:*");
 			inbiomedvisionServer.commit();
+			researcherIndexServer.deleteByQuery("*:*");
+			researcherIndexServer.commit();			
 		}
-		researcherIndexServer.deleteByQuery("*:*");
-		researcherIndexServer.commit();			
 	}
 	
 	public void commit() {
@@ -74,6 +75,32 @@ public class SolrInterface {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static List<String> getAuthorsAlreadyStored() throws SolrServerException{
+		List<String> result = new ArrayList<String>();
+		final Integer rows = 100;
+		Integer start = 0;
+		Boolean more = true;
+
+		SolrQuery q = new SolrQuery();
+		q.setQuery( "*:*" );
+		q.setRows( rows );
+		q.setFields( "name" );
+	
+		while ( more ){
+			q.setStart(start);
+			QueryResponse r = researcherIndexServer.query( q );
+			
+			SolrDocumentList docs = r.getResults();
+			for ( int i = 0 ; i < docs.size(); i++ ){
+				result.add( docs.get(i).getFieldValue("name").toString() );
+			}
+			more = docs.size() == rows;
+			start += rows;
+		}
+		
+		return result;
 	}
 	
 	/**

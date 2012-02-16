@@ -45,7 +45,7 @@ public class CombineAndStoreinSOLR {
 			    			authorInfo.setName(pieces[0]);
 			    			authorInfo.setEmail(pieces[1]);
 			    			authorInfo.setAffiliation(pieces[2]);
-			    			authorInfo.setCoauthors(pieces[3]);
+			    			//authorInfo.setCoauthors(pieces[3]);
 		    			}
 			    		else if ( pieces.length == 3 ){
 			    			authorInfo.setName(pieces[0]);

@@ -14,12 +14,17 @@ public class AggregateAndStore {
 	public static void main(String[] args) throws SolrServerException, IOException {
 		solrInterface = new SolrInterface(false);
 		
+		List<String> authorsProcessed = SolrInterface.getAuthorsAlreadyStored();
 		List<String> authorNames = SolrInterface.getAuthors(true);
 		
 		int count = 0;
 		for ( String author : authorNames ){
 			count += 1;
 			System.out.println( "processing " + count + " of " + authorNames.size() );
+			if ( authorsProcessed.contains(author)){
+				System.out.println( author + " has already been processed." );
+				continue;
+			}
 			//if ( author.contains("G Raghava") ){
 				AuthorInfo authorInfo = solrInterface.getAuthorInfoFromDB(author);
 				System.out.println( author );
