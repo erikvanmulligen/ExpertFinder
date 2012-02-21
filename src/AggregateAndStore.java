@@ -13,6 +13,7 @@ public class AggregateAndStore {
 	
 	public static void main(String[] args) throws SolrServerException, IOException {
 		solrInterface = new SolrInterface(false);
+		//solrInterface.clearRI();
 		
 		List<String> authorsProcessed = SolrInterface.getAuthorsAlreadyStored();
 		List<String> authorNames = SolrInterface.getAuthors(true);
@@ -21,11 +22,18 @@ public class AggregateAndStore {
 		for ( String author : authorNames ){
 			count += 1;
 			System.out.println( "processing " + count + " of " + authorNames.size() );
-			if ( authorsProcessed.contains(author)){
-				System.out.println( author + " has already been processed." );
-				continue;
+			
+			if ( authorsProcessed.contains(author) ){
+				if ( ( count >= 3327 && count <= 3328 ) || ( count >= 9769 && count <= 9843 ) ){
+					System.out.println( author + " has already been processed with failure." );
+				}
+				else{
+					System.out.println( author + " has already been processed." );
+					continue;
+				}
 			}
-			//if ( author.contains("G Raghava") ){
+
+			try{
 				AuthorInfo authorInfo = solrInterface.getAuthorInfoFromDB(author);
 				System.out.println( author );
 				authorInfo.setName( author );
@@ -40,7 +48,10 @@ public class AggregateAndStore {
 					authorInfo.findAffiliationAndEmail(articles);
 				}
 				solrInterface.addResearcherIndex( authorInfo );
-			//}
+			}
+			catch ( Exception e ){
+				System.out.println( "error for " + author );
+			}
 		}
 	}
 }
