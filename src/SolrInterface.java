@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -44,9 +46,12 @@ public class SolrInterface {
 		if (clear){
 			inbiomedvisionServer.deleteByQuery("*:*");
 			inbiomedvisionServer.commit();
-			researcherIndexServer.deleteByQuery("*:*");
-			researcherIndexServer.commit();			
 		}
+	}
+	
+	public void clearRI() throws SolrServerException, IOException{
+		researcherIndexServer.deleteByQuery("*:*");
+		researcherIndexServer.commit();			
 	}
 	
 	public void commit() {
@@ -438,5 +443,26 @@ public class SolrInterface {
 		return authorInfo;
 	}
 
+	public static TreeMap<String,Integer> getAuthorsReady() throws SolrServerException {
+		TreeMap<String,Integer> result = new TreeMap<String,Integer>();
+		SolrQuery q = new SolrQuery();
+		q.setFields( "name" );
+		q.setQuery( "*:*" );
+		q.setRows( 100 );
+		Integer start = 0;
+		Boolean more = true;
 	
+		while ( more ){
+			q.setStart(start);
+			QueryResponse r = researcherIndexServer.query( q );
+			SolrDocumentList docs = r.getResults();
+			for ( int i = 0 ; i < docs.size(); i++ ){
+				result.put( docs.get(i).getFieldValue("name").toString(), 1 );
+			}
+			more = docs.size() == 100;
+			start += docs.size();
+		}
+		
+		return result;
+	}
 }

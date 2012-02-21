@@ -274,9 +274,13 @@ public class AuthorInfo {
 			Iterator<PubmedArticleType> iterator = articles.iterator();
 			while( iterator.hasNext() ){
 				PubmedArticleType article = iterator.next();
-				AuthorType[] aus = article.getMedlineCitation().getArticle().getAuthorList().getAuthor();
-				for ( int a = 0 ; a < aus.length ; a++ ){
-					addAuthor(makeAuthor(aus[a]));
+				try{
+					AuthorType[] aus = article.getMedlineCitation().getArticle().getAuthorList().getAuthor();
+					for ( int a = 0 ; a < aus.length ; a++ ){
+						addAuthor(makeAuthor(aus[a]));
+					}
+				}
+				catch (Exception e){
 				}
 			}
 		}
@@ -294,12 +298,7 @@ public class AuthorInfo {
 		
 		List<PubmedArticleType> articles = null;
 		if ( this.pmidFirst.size() < 10 ){
-			try{
-				articles = pubMed.searchArticles(this.lastName + " " + this.initials, 10, solrInterface.getCoauthors(key), this.pmidFirst );
-			}
-			catch( Exception e ){
-				System.out.println( "error for author " + key + " with affiliation = " + getAffiliation() );
-			}
+			articles = pubMed.searchArticles(this.lastName + " " + this.initials, 10, solrInterface.getCoauthors(key), this.pmidFirst );
 		}
 		else{
 			articles = pubMed.getArticles( this.pmidFirst );
@@ -308,13 +307,7 @@ public class AuthorInfo {
 		findAuthors( articles );
 		findAffiliationAndEmail( articles );
 		
-		try{
-			articles = pubMed.getArticles( this.getPmids() );
-		}
-		catch( Exception e ){
-			System.out.println( "error for author " + key + " with affiliation = " + getAffiliation() );
-		}
+		articles = pubMed.getArticles( this.getPmids() );
 		findAuthors( articles );
-		
 	}	
 }
